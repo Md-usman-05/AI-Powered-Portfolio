@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Outfit:wght@300;400;600&display=swap');
+
+@layer base {
+  body {
+    /* Matte Obsidian Background - Premium & Dark */
+    @apply bg-[#050505] text-slate-300 antialiased selection:bg-blue-600/30 selection:text-blue-100;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* --- BACKGROUND SYSTEM --- */
+.site-wrapper {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #050505;
+  
+  /* 1. Base Grid Pattern */
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* 2. Center Vignette (Darkens edges) */
+.site-wrapper::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, #050505 90%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 3. SECRET FEATURE: The Mouse Spotlight */
+.site-wrapper::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Creates a subtle blue glow following the mouse */
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+    rgba(59, 130, 246, 0.07), 
+    transparent 40%
+  );
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0; /* Hidden by default until hover */
+  transition: opacity 0.5s;
+}
+
+/* Activate Spotlight on Hover */
+body:hover .site-wrapper::after {
+  opacity: 1;
+}
+
+/* --- UTILITIES --- */
+:root {
+  --accent-color: #3b82f6;
+}
+
+.text-accent { color: var(--accent-color); }
+
+/* Glass Navigation */
+.glass-nav {
+  @apply bg-[#050505]/80 backdrop-blur-md border-b border-white/5;
+}
+
+/* Minimalist Button Style */
+.btn-minimal {
+  @apply px-6 py-3 border border-white/20 text-white text-sm font-medium rounded-lg 
+         hover:bg-white hover:text-black hover:border-white transition-all duration-300;
+}
+/* Add this to the body or site-wrapper */
+.cursor-none {
+  cursor: none !important; /* Hides default cursor so only ours shows */
+}
+
+/* Ensure links/buttons don't force the pointer back */
+a, button, input {
+  cursor: none !important;
+}
+/* ... existing CSS ... */
+
+/* RESTORE CURSOR ON MOBILE/TOUCH DEVICES */
+@media (hover: none) and (pointer: coarse) {
+  .cursor-none {
+    cursor: auto !important;
+  }
+  
+  /* Hide our custom cursor elements on phone */
+  /* Note: We will add this class to the CustomCursor component below */
+  .custom-cursor-visual {
+    display: none !important;
+  }
+}
+/* src/index.css */
+.cursor-none {
+  cursor: none !important;
+}
+
+/* Ensure links/buttons don't force the pointer back */
+a, button, input, textarea, select {
+  cursor: none !important;
+}
+
+/* Restore normal cursor on Mobile */
+@media (hover: none) and (pointer: coarse) {
+  .cursor-none {
+    cursor: auto !important;
+  }
+  .custom-cursor-visual {
+    display: none !important;
+  }
+}
+body {
+  font-family: 'Outfit', sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em; /* Tightens text for a modern look */
+}
+/* FORCE DARK BACKGROUND ON AUTOFILL */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px #050505 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: white; /* Ensures cursor is white */
+}
