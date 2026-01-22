@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom"; // <--- CHANGED TO HASHROUTER
+
 
 // --- COMPONENTS ---
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer"; // <--- ADDED FOOTER IMPORT
+import Footer from "./components/Footer";
 import Chatbot from "./components/Chatbot";
 import ScrollToTop from "./components/ScrollToTop";
 import NeuralBackground from "./components/NeuralBackground";
@@ -57,7 +58,8 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    // CHANGED WRAPPER TO HASHROUTER
+    <HashRouter>
       {/* --- UTILITIES (Always Active) --- */}
       <ScrollToTop />
       
@@ -90,7 +92,7 @@ export default function App() {
               <AnimatedRoutes />
             </main>
 
-            {/* --- FOOTER ADDED HERE --- */}
+            {/* --- FOOTER --- */}
             <Footer />
 
             {/* The AI Assistant */}
@@ -98,6 +100,6 @@ export default function App() {
           </div>
         </div>
       )}
-    </BrowserRouter>
+    </HashRouter>
   );
 }

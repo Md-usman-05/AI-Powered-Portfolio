@@ -54,15 +54,15 @@ export default function Navbar() {
         </div>
 
         {/* RESUME DOWNLOAD BUTTON */}
-        <Magnetic>
-          <a
-            href="/resume.pdf"
-            download="Md_Usman_Resume.pdf" // <--- FORCE DOWNLOAD ATTRIBUTE
-            className="hidden md:block px-6 py-3 bg-[#1a1a1a] border border-white/10 text-white text-xs font-bold rounded-lg hover:bg-cyan-400 hover:text-black hover:border-cyan-400 transition-all duration-300"
-          >
-            DOWNLOAD RESUME
-          </a>
-        </Magnetic>
+        <a
+  // USE THIS EXACT LINK (Replace 'Md-usman-05' if your user changes)
+  href="https://Md-usman-05.github.io/AI-Powered-Portfolio/resume.pdf"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="..." // (Keep your existing classes)
+>
+  DOWNLOAD RESUME
+</a>
 
       </div>
     </nav>

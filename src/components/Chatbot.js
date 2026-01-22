@@ -1,55 +1,81 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// --- CONFIGURATION ---
+const OLLAMA_URL = "http://localhost:11434/api/chat";
+const MODEL_NAME = "phi:latest"; // Ensure this model is pulled locally
+
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hello! I'm Usman.AI. Ask me about my developer, skills, or projects." }
+    { sender: "bot", text: "System Online. I am Usman.AI. Ask about my developer, skills, or projects." }
   ]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState("checking"); // 'online' (Ollama) or 'simulated' (Rules)
+  
   const endRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // --- CONFIGURATION ---
-  const MODEL_NAME = "phi:latest"; // Ensure 'phi' is installed in Ollama
-  const API_URL = "http://localhost:11434/api/chat";
-
-  // --- STRICT BRAIN (System Prompt) ---
+  // --- 1. SYSTEM PROMPT (For Ollama) ---
   const SYSTEM_PROMPT = `
     You are Usman.AI, a helpful portfolio assistant for Md Usman.
-    
-    YOUR KNOWLEDGE BASE (Facts Only):
-    - **Identity**: You are an AI created by Md Usman using React and Ollama.
-    - **Developer**: Md Usman is a B.Tech 3rd Year Student (AI & Data Science) at Mother Theresa Institute of Engineering and Technology, India.
-    - **Skills**: Python, React.js, Tailwind CSS, Arduino (IoT), Machine Learning.
-    - **Projects**: Smart Railway Gate (Arduino), AI Portfolio (React), Offline SLM.
-    - **Hobbies**: Chess, Food exploration.
-
-    INSTRUCTIONS:
-    1. Answer ONLY the user's question.
-    2. Be polite, professional, and concise.
-    3. Do NOT generate puzzles, quizzes, or long stories.
-    4. If you don't know the answer, say "I don't have that information."
+    FACTS:
+    - Creator: Md Usman, B.Tech 3rd Year (AI & DS) at Mother Theresa Institute.
+    - Skills: Python, React.js, Tailwind, Arduino (IoT), ML.
+    - Projects: Smart Railway Gate (IoT), AI Portfolio, Offline SLM.
+    - Hobbies: Chess, Food.
+    RULES: Be concise. No long stories. If unknown, say "I don't know".
   `;
 
-  // Scroll to bottom
+  // --- 2. RULE-BASED BRAIN (For Visitors/Deployment) ---
+  const getRuleBasedResponse = (text) => {
+    const lower = text.toLowerCase();
+    if (lower.match(/(hi|hello|hey|greetings)/)) return "Hello! Accessing personnel files... How can I assist you?";
+    if (lower.match(/(who|developer|creator|name|usman)/)) return "I was created by Md Usman, a B.Tech 3rd Year AI & Data Science student at MTIET.";
+    if (lower.match(/(skill|stack|tech|python|react)/)) return "Usman is proficient in Python, React.js, Tailwind CSS, Arduino (IoT), and Machine Learning.";
+    if (lower.match(/(project|work|built|portfolio|gate)/)) return "Key Projects: \n1. Smart Railway Gate (Arduino/IoT) \n2. AI-Powered Portfolio (React) \n3. Offline SLM Research.";
+    if (lower.match(/(contact|email|reach|hire)/)) return "You can contact him via the form on this site or check his LinkedIn profile.";
+    if (lower.match(/(hobby|chess|food)/)) return "He enjoys playing Chess and exploring new food cultures.";
+    return "I am running in Simulation Mode (Offline). Please ask about 'Skills', 'Projects', or 'Contact'.";
+  };
+
+  // --- SCROLL & FOCUS LOGIC ---
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isThinking, isTyping]);
 
-  // Typewriter Effect
+  useEffect(() => {
+    if (open) {
+        setTimeout(() => inputRef.current?.focus(), 300);
+        checkConnection();
+    }
+  }, [open]);
+
+  // Check if User has Ollama running
+  const checkConnection = async () => {
+    try {
+        const res = await fetch("http://localhost:11434");
+        if(res.ok) setConnectionStatus("online");
+        else setConnectionStatus("simulated");
+    } catch (e) {
+        setConnectionStatus("simulated");
+    }
+  };
+
+  // --- TYPEWRITER EFFECT ---
   const typeOutResponse = async (fullText) => {
     setIsThinking(false);
     setIsTyping(true);
     setMessages(prev => [...prev, { sender: 'bot', text: '' }]);
 
+    const chunkSpeed = 15; // Faster typing
     for (let i = 0; i < fullText.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 10)); // Typing speed
+      await new Promise(resolve => setTimeout(resolve, chunkSpeed));
       setMessages(prev => {
         const newMsgs = [...prev];
-        const lastMsg = newMsgs[newMsgs.length - 1];
-        lastMsg.text = fullText.substring(0, i + 1);
+        newMsgs[newMsgs.length - 1].text = fullText.substring(0, i + 1);
         return newMsgs;
       });
     }
@@ -60,67 +86,55 @@ export default function Chatbot() {
     if (!input.trim() || isTyping) return;
     const userMsg = input.trim();
     setInput(""); 
-    
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
-
-    // --- 1. GREETING GUARD (Fixes the "Hi" issue) ---
-    // If user just says "hi", answer immediately without asking AI.
-    const lowerMsg = userMsg.toLowerCase();
-    if (['hi', 'hello', 'hey', 'hi there', 'hola'].includes(lowerMsg.replace(/[.!]/g, ''))) {
-      setTimeout(() => typeOutResponse("Hello! How can I help you today?"), 500);
-      return;
-    }
-
-    // --- 2. SEND TO AI ---
     setIsThinking(true);
 
     try {
-      // Convert UI messages to Ollama format
-      const history = messages.map(msg => ({
-        role: msg.sender === 'bot' ? 'assistant' : 'user',
-        content: msg.text
-      }));
+      // 1. Try OLLAMA first
+      if (connectionStatus === "online") {
+        const history = messages.map(msg => ({
+            role: msg.sender === 'bot' ? 'assistant' : 'user',
+            content: msg.text
+        }));
 
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: MODEL_NAME,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...history,
-            { role: "user", content: userMsg }
-          ],
-          stream: false,
-          options: { 
-            temperature: 0.2, // Very low creativity = Logical answers
-            num_ctx: 2048 
-          }
-        }),
-      });
+        const response = await fetch(OLLAMA_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+            model: MODEL_NAME,
+            messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history, { role: "user", content: userMsg }],
+            stream: false,
+            options: { temperature: 0.2, num_ctx: 2048 }
+            }),
+        });
 
-      if (!response.ok) throw new Error("Connection Failed");
-
-      const data = await response.json();
-      const botResponse = data.message?.content || "I am offline right now.";
-      await typeOutResponse(botResponse);
+        if (!response.ok) throw new Error("Ollama Failed");
+        const data = await response.json();
+        await typeOutResponse(data.message?.content);
+      
+      } else {
+        // 2. Fallback to RULES if Ollama fails/offline
+        throw new Error("Simulated Mode");
+      }
 
     } catch (error) {
-      console.error("Error:", error);
-      setIsThinking(false);
-      setMessages(prev => [...prev, { 
-        sender: "bot", 
-        text: "⚠️ My brain (Ollama) is disconnected. Please check your terminal." 
-      }]);
+      // 3. Graceful Fallback
+      console.warn("Switching to Rule-Based:", error.message);
+      // Artificial delay to mimic thinking
+      setTimeout(() => {
+          const fallbackResponse = getRuleBasedResponse(userMsg);
+          typeOutResponse(fallbackResponse);
+      }, 800);
     }
   };
 
   const clearChat = () => {
-    setMessages([{ sender: "bot", text: "Chat cleared. How can I help?" }]);
+    setMessages([{ sender: "bot", text: "Memory wiped. Ready for new input." }]);
   };
 
   return (
     <>
+      {/* TOGGLE BUTTON */}
       <AnimatePresence>
         {!open && (
           <motion.button
@@ -132,16 +146,19 @@ export default function Chatbot() {
             onClick={() => setOpen(true)}
             className="fixed bottom-8 right-8 z-[999] group"
           >
-            <div className="absolute inset-0 bg-blue-600 rounded-full blur-[20px] opacity-40 group-hover:opacity-60 animate-pulse" />
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-blue-700 to-cyan-500 flex items-center justify-center shadow-2xl border border-white/20">
+            <div className="absolute inset-0 bg-cyan-500 rounded-full blur-[20px] opacity-40 group-hover:opacity-60 animate-pulse" />
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-2xl border border-white/20">
               <svg className="w-8 h-8 text-white drop-shadow-md" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
+              {/* Notification Dot */}
+              <span className="absolute top-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-black rounded-full"></span>
             </div>
           </motion.button>
         )}
       </AnimatePresence>
 
+      {/* CHAT WINDOW */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -149,46 +166,51 @@ export default function Chatbot() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-8 right-8 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh] bg-[#050505]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[1000] flex flex-col"
+            className="fixed bottom-8 right-8 w-[90vw] md:w-[400px] h-[600px] max-h-[80vh] bg-[#050505]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[1000] flex flex-col font-sans"
           >
             {/* HEADER */}
-            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-blue-900/20 to-transparent">
+            <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <div className="relative">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    {/* Status Dot */}
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#050505] ${connectionStatus === 'online' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white tracking-wide">Usman.AI</h3>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] text-blue-200 font-mono">ONLINE</span>
+                    <span className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+                        {connectionStatus === 'online' ? 'NEURAL LINK ACTIVE' : 'SIMULATION MODE'}
+                    </span>
                   </div>
                 </div>
               </div>
               
               <div className="flex items-center gap-1">
-                <button onClick={clearChat} className="p-2 hover:bg-red-500/10 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+                <button onClick={clearChat} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors" title="Clear Memory">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
-                <button onClick={() => setOpen(false)} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                <button onClick={() => setOpen(false)} className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
 
-            {/* MESSAGES */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            {/* MESSAGES AREA */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {m.sender === 'bot' && (
-                    <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center mr-2 mt-1 border border-white/10 flex-shrink-0">
-                      <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+                    <div className="w-6 h-6 rounded-full bg-cyan-900/50 flex items-center justify-center mr-2 mt-1 border border-cyan-500/30 flex-shrink-0">
+                      <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
                     </div>
                   )}
-                  <div className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
+                  <div className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed shadow-lg ${
                     m.sender === 'user' 
-                      ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm shadow-lg shadow-blue-600/20' 
-                      : 'bg-[#1a1a1a] border border-white/10 text-slate-300 rounded-2xl rounded-tl-sm'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-2xl rounded-tr-sm' 
+                      : 'bg-white/5 border border-white/10 text-slate-200 rounded-2xl rounded-tl-sm'
                   }`}>
                     {m.text.split('\n').map((line, idx) => (
                         <p key={idx} className={idx > 0 ? "mt-2" : ""}>{line}</p>
@@ -198,36 +220,37 @@ export default function Chatbot() {
               ))}
 
               {isThinking && (
-                <div className="flex justify-start">
-                   <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center mr-2 mt-1 border border-white/10 flex-shrink-0">
-                      <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
-                   </div>
-                   <div className="bg-[#1a1a1a] border border-white/10 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center h-10">
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" />
+                <div className="flex justify-start animate-pulse">
+                    <div className="w-6 h-6 rounded-full bg-cyan-900/50 flex items-center justify-center mr-2 border border-cyan-500/30">
+                        <svg className="w-3 h-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                   <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-2xl rounded-tl-sm flex gap-1 items-center">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" />
                   </div>
                 </div>
               )}
               <div ref={endRef} />
             </div>
 
-            {/* INPUT */}
-            <div className="p-4 border-t border-white/5 bg-black/40 backdrop-blur-md">
-              <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative group">
+            {/* INPUT AREA */}
+            <div className="p-3 border-t border-white/10 bg-black/40 backdrop-blur-md">
+              <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex gap-2">
                 <input
+                  ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask Usman.AI..."
+                  placeholder={connectionStatus === 'online' ? "Ask AI anything..." : "Ask about skills, projects..."}
                   disabled={isTyping} 
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:border-blue-500/50 focus:bg-blue-900/5 focus:outline-none transition-all placeholder:text-slate-600 disabled:opacity-50"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-sm text-white focus:border-cyan-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder:text-slate-500 disabled:opacity-50"
                 />
                 <button 
                   type="submit" 
                   disabled={!input.trim() || isThinking || isTyping} 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 rounded-lg text-white hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 transition-all shadow-lg shadow-blue-600/20"
+                  className="p-3 bg-cyan-600 rounded-xl text-white hover:bg-cyan-500 disabled:opacity-50 disabled:hover:bg-cyan-600 transition-all shadow-lg shadow-cyan-600/20"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 </button>
               </form>
             </div>
