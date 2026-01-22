@@ -34,8 +34,8 @@ export default function Chatbot() {
     const lower = text.toLowerCase();
     if (lower.match(/(hi|hello|hey|greetings)/)) return "Hello! Accessing personnel files... How can I assist you?";
     if (lower.match(/(who|developer|creator|name|usman)/)) return "I was created by Md Usman, a B.Tech 3rd Year AI & Data Science student at MTIET.";
-    if (lower.match(/(skill|stack|tech|python|react)/)) return "Usman is proficient in Python, React.js, Tailwind CSS, Arduino (IoT), and Machine Learning.";
-    if (lower.match(/(project|work|built|portfolio|gate)/)) return "Key Projects: \n1. Smart Railway Gate (Arduino/IoT) \n2. AI-Powered Portfolio (React) \n3. Offline SLM Research.";
+    if (lower.match(/(skill|skills|stack|tech|python|react)/)) return "Usman is proficient in Python, React.js, Tailwind CSS, Arduino (IoT), and Machine Learning.";
+    if (lower.match(/(projects|work|built|portfolio|gate)/)) return "Key Projects: \n1. Smart Railway Gate (Arduino/IoT) \n2. AI-Powered Portfolio (React) \n3. Offline SLM Research.";
     if (lower.match(/(contact|email|reach|hire)/)) return "You can contact him via the form on this site or check his LinkedIn profile.";
     if (lower.match(/(hobby|chess|food)/)) return "He enjoys playing Chess and exploring new food cultures.";
     return "I am running in Simulation Mode (Offline). Please ask about 'Skills', 'Projects', or 'Contact'.";

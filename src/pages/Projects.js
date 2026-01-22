@@ -3,10 +3,7 @@ import { motion } from 'framer-motion';
 import { FaArrowRight, FaGithub } from 'react-icons/fa';
 import TiltCard from '../components/TiltCard';
 
-// --- STEP 1: IMPORT IMAGES ---
-// Ensure these files exist in src/assets/
-import project1 from "../assets/portfolio-projects.jpg"; 
-import project2 from "../assets/portfolio-home.jpg";     
+// --- NO IMPORTS NEEDED FOR PUBLIC IMAGES ---
 
 const projects = [
   {
@@ -16,7 +13,9 @@ const projects = [
     shortDesc: "An automated safety system preventing accidents at unmanned crossings using ultrasonic sensors and Arduino.",
     tech: ["Arduino", "C++", "Sensors"],
     github: "https://github.com/Md-usman-05/smart-railway-gate",
-    image: project2 // <--- Attach Image Variable Here
+    
+    // ✅ CORRECT WAY: Pointing to the file in public/images/
+    image: process.env.PUBLIC_URL + "/images/train-front.jpeg" 
   },
   {
     id: "portfolio-app",
@@ -25,7 +24,9 @@ const projects = [
     shortDesc: "A next-gen personal site featuring a context-aware AI chatbot, voice navigation, and local LLM integration.",
     tech: ["React", "AI/LLM", "Voice API"],
     github: "https://github.com/Md-usman-05/AI-Powered-Portfolio",
-    image: project1 // <--- Attach Image Variable Here
+    
+    // ✅ CORRECT WAY: Pointing to the file in public/images/
+    image: process.env.PUBLIC_URL + "/images/portfolio-home.jpg"
   }
 ];
 
@@ -75,20 +76,24 @@ export default function Projects() {
               
               <TiltCard className="h-full group flex flex-col bg-[#0f111a] border border-white/5 rounded-2xl overflow-hidden hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
                 
-                {/* --- IMAGE SECTION (NEW) --- */}
+                {/* --- IMAGE SECTION --- */}
                 <div className="h-48 overflow-hidden relative border-b border-white/5">
                   {project.image ? (
                     <img 
                       src={project.image} 
                       alt={project.title} 
                       className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
+                      onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.style.display = 'none'; // Hide if broken
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-600 text-xs font-mono">
                       [NO_IMAGE_DATA]
                     </div>
                   )}
-                  {/* Overlay Gradient for readability */}
+                  {/* Overlay Gradient */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-transparent to-transparent" />
                 </div>
 
