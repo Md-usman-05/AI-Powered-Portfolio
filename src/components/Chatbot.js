@@ -2,16 +2,23 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
-// --- 🔒 FINAL CONFIGURATION ---
+// --- CONFIGURATION ---
 const PART_1 = "hf_";
-const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your NEW Key
+const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your New Key
 const HF_TOKEN = PART_1 + PART_2;
+const MODEL_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
 
-// ✅ SWITCH TO ZEPHYR (Best for Browser/Portfolio use)
-// It is "Ungated" (No license needed) and works better with Proxies.
-const TARGET_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
-const PROXY = "https://corsproxy.io/?"; 
-const FULL_URL = PROXY + encodeURIComponent(TARGET_URL);
+// --- LOCAL BACKUP BRAIN (The Fail-Safe) ---
+// If Real AI fails, this answers instantly.
+const getLocalResponse = (text) => {
+  const lower = text.toLowerCase();
+  if (lower.includes("hi") || lower.includes("hello")) return "Hey there! 👋 I'm Usman's digital twin. Ask me about his projects!";
+  if (lower.includes("who")) return "I am Md Usman, a B.Tech AI student at MTIET with a passion for building intelligent systems.";
+  if (lower.includes("skill") || lower.includes("stack")) return "My tech stack includes Python, React.js, IoT (Arduino), and Machine Learning.";
+  if (lower.includes("project") || lower.includes("work")) return "I built a 'Smart Railway Gate' system and this AI-powered portfolio. I'm also researching offline LLMs.";
+  if (lower.includes("contact") || lower.includes("email")) return "You can reach me via the Contact page or email me at usman@example.com.";
+  return "That's an interesting question! To give you the best answer, please contact Usman directly via the Contact section. 🚀";
+};
 
 const SYSTEM_CONTEXT = `
 You are Usman's Digital Twin. You are NOT a robot.
@@ -32,37 +39,37 @@ export default function Chatbot() {
   const endRef = useRef(null);
 
   const queryHuggingFace = async (userText) => {
-    // Zephyr uses a specific prompt format
+    // 1. Try Real AI (Direct Call - No Proxy to avoid "Busy" errors)
     const prompt = `<|system|>\n${SYSTEM_CONTEXT}</s>\n<|user|>\n${userText}</s>\n<|assistant|>`;
 
     try {
-      const response = await fetch(FULL_URL, {
+      // We use a timeout to fail fast if the API is slow
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+      const response = await fetch(MODEL_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${HF_TOKEN}`,
           "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify({
           inputs: prompt,
-          parameters: { max_new_tokens: 200, return_full_text: false, temperature: 0.7 }
+          parameters: { max_new_tokens: 150, return_full_text: false, temperature: 0.7 }
         }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
 
-      // --- DIAGNOSTICS ---
-      if (response.status === 503) return "🧠 Brain loading... (Cold Boot). Ask again in 20s!";
-      if (response.status === 401) return "⛔ Auth Error: Key Invalid.";
-      
-      if (!response.ok) {
-        return `⚠️ Technical Error ${response.status}.`;
-      }
+      if (!response.ok) throw new Error("API Error");
 
       const result = await response.json();
-      return result[0]?.generated_text || "I didn't catch that.";
+      return result[0]?.generated_text || getLocalResponse(userText);
 
     } catch (error) {
-      console.error(error);
-      return `❌ Connection Failed. (Proxy might be busy).`;
+      console.warn("Real AI failed, switching to Backup Brain:", error);
+      // 2. FALLBACK: Use Local Brain if Real AI fails
+      return getLocalResponse(userText);
     }
   };
 
@@ -75,6 +82,7 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
     setIsTyping(true);
 
+    // Get answer (Real AI or Backup)
     const botReply = await queryHuggingFace(userMsg);
 
     setMessages(prev => [...prev, { sender: "bot", text: botReply }]);
