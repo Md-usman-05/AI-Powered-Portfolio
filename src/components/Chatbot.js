@@ -2,15 +2,15 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
-// --- 🔒 FINAL SECURITY CONFIG ---
-// 1. SPLIT THE KEY (So GitHub doesn't ban it):
+// --- 🔒 FINAL CONFIGURATION ---
 const PART_1 = "hf_";
 const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your NEW Key
 const HF_TOKEN = PART_1 + PART_2;
 
-// 2. THE PROXY FIX (Bypasses the "Network Error" / CORS Block)
+// ✅ SWITCH TO ZEPHYR (Best for Browser/Portfolio use)
+// It is "Ungated" (No license needed) and works better with Proxies.
+const TARGET_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
 const PROXY = "https://corsproxy.io/?"; 
-const TARGET_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 const FULL_URL = PROXY + encodeURIComponent(TARGET_URL);
 
 const SYSTEM_CONTEXT = `
@@ -32,7 +32,8 @@ export default function Chatbot() {
   const endRef = useRef(null);
 
   const queryHuggingFace = async (userText) => {
-    const prompt = `<s>[INST] ${SYSTEM_CONTEXT}\n\nQuestion: ${userText} [/INST]`;
+    // Zephyr uses a specific prompt format
+    const prompt = `<|system|>\n${SYSTEM_CONTEXT}</s>\n<|user|>\n${userText}</s>\n<|assistant|>`;
 
     try {
       const response = await fetch(FULL_URL, {
@@ -48,13 +49,12 @@ export default function Chatbot() {
         }),
       });
 
-      // --- ERROR DIAGNOSTICS ---
+      // --- DIAGNOSTICS ---
       if (response.status === 503) return "🧠 Brain loading... (Cold Boot). Ask again in 20s!";
-      if (response.status === 401) return "⛔ Auth Error: Key Invalid. Check GitHub Secrets.";
-      if (response.status === 403) return "🔒 Access Denied: The model is locked.";
+      if (response.status === 401) return "⛔ Auth Error: Key Invalid.";
       
       if (!response.ok) {
-        return `⚠️ Technical Error ${response.status}. Check console.`;
+        return `⚠️ Technical Error ${response.status}.`;
       }
 
       const result = await response.json();
@@ -62,7 +62,7 @@ export default function Chatbot() {
 
     } catch (error) {
       console.error(error);
-      return `❌ Connection Failed. The Proxy might be busy. Try again.`;
+      return `❌ Connection Failed. (Proxy might be busy).`;
     }
   };
 
