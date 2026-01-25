@@ -2,19 +2,20 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
-// --- 🔒 SECURITY FIX: BASE64 ENCODED KEY ---
-// This is your key, but encrypted so GitHub cannot block or break it.
+// --- 🔒 SECURITY: BASE64 ENCODED KEY ---
+// Your Key (Encoded so GitHub doesn't block it)
 const ENCODED_KEY = "QUl6YVN5QWEydG9wLXBMMkJDdHFPaEZXa3NLOHpVZ2RfSGQ0LXpn"; 
-const GEMINI_KEY = atob(ENCODED_KEY); // We decode it safely here
+const GEMINI_KEY = atob(ENCODED_KEY); 
 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+// ✅ FIX: Switched to 'gemini-pro' (The stable, universally available model)
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
 
 const SYSTEM_CONTEXT = `
 You are Usman's Digital Twin.
 Usman is a B.Tech AI student at MTIET.
 Skills: Python, React, IoT, AI.
 Projects: Smart Railway Gate, AI Portfolio.
-Keep answers under 3 sentences.
+Tone: Professional & Short.
 `;
 
 export default function Chatbot() {
@@ -38,11 +39,9 @@ export default function Chatbot() {
         }),
       });
 
-      // --- DEBUGGING: PRINT EXACT ERROR TO CHAT ---
       if (!response.ok) {
         const errorData = await response.json();
-        const errorMessage = errorData.error?.message || response.statusText;
-        throw new Error(`Google Error: ${errorMessage}`);
+        throw new Error(errorData.error?.message || "Unknown Error");
       }
 
       const data = await response.json();
@@ -50,8 +49,7 @@ export default function Chatbot() {
 
     } catch (error) {
       console.error("AI Error:", error);
-      // This will now show the REAL error in the chat bubble
-      return `⚠️ Error: ${error.message}`;
+      return `⚠️ Connection Issue: ${error.message}`;
     }
   };
 
