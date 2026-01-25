@@ -3,12 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- 🔒 SECURITY: BASE64 ENCODED KEY ---
-// This is your NEW key (Encrypted so GitHub doesn't block it)
+// Your Fresh Key: AIzaSyDEI8sqf1Q-UUhSwRWpnIMBveJ9NNQiU1E
 const ENCODED_KEY = "QUl6YVN5REVJOHNxZjFRLVVVaFN3UldwbklNQnZlSjlOTlFpVTFF"; 
 const GEMINI_KEY = atob(ENCODED_KEY); 
-
-// ✅ Using 'gemini-1.5-flash' (Standard for New Projects)
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
 const SYSTEM_CONTEXT = `
 You are Usman's Digital Twin.
@@ -27,30 +24,47 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
 
+  // --- 🧠 SMART BRAIN SWITCHER ---
+  // If one model fails, it tries the next one automatically.
   const queryGemini = async (userText) => {
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: `${SYSTEM_CONTEXT}\n\nUser Question: ${userText}\nAnswer:` }]
-          }]
-        }),
-      });
+    const models = [
+      "gemini-1.5-flash",       // Option 1: Latest & Fastest
+      "gemini-1.5-flash-001",   // Option 2: Specific Version
+      "gemini-pro",             // Option 3: Stable
+      "gemini-1.0-pro"          // Option 4: Legacy
+    ];
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || response.statusText);
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: `${SYSTEM_CONTEXT}\n\nUser Question: ${userText}\nAnswer:` }]
+              }]
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        // If Google sends an error, throw it so we catch it and try the next model
+        if (data.error) throw new Error(data.error.message);
+        
+        // If successful, return the answer immediately
+        return data.candidates[0].content.parts[0].text;
+
+      } catch (error) {
+        console.warn(`Model ${model} failed. Trying next...`);
+        // Continue loop to try next model
       }
-
-      const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
-
-    } catch (error) {
-      console.error("AI Error:", error);
-      return `⚠️ Error: ${error.message}`;
     }
+
+    // If ALL models fail:
+    return "⚠️ My brain is having a connection hiccup. Please try again in 1 minute!";
   };
 
   const handleSend = async (e) => {
