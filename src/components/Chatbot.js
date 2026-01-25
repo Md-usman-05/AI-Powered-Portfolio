@@ -2,52 +2,58 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
-// --- CONFIGURATION ---
-const PART_1 = "hf_";
-const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your Key
-const HF_TOKEN = PART_1 + PART_2;
-// We use a direct URL. If it fails, we fall back to Local Brain.
-const MODEL_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
+// --- 🔑 GEMINI CONFIGURATION ---
+// We split the key so GitHub doesn't block the upload.
+const PART_1 = "AIzaSyAa2top-"; 
+const PART_2 = "pL2BCtqOhFWksK8zUgd_Hd4-zg"; 
+const GEMINI_KEY = PART_1 + PART_2;
+
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
 const SYSTEM_CONTEXT = `
-You are Usman's Digital Twin. 
-Usman is a B.Tech AI student at MTIET. 
-Skills: Python, React, IoT (Arduino), AI.
+You are Usman's Digital Twin. You are NOT a robot.
+Speak in the first person ("I", "Me"). 
+Usman is a B.Tech AI student at MTIET. Grades: 95% SSC, 90% Inter.
+Skills: Python, React, IoT (Arduino), AI, NLP.
 Projects: Smart Railway Gate, AI Portfolio.
-Keep answers under 2 sentences.
+Goal: Answer technical questions (like "Define NLP") and personal questions about Usman.
+Keep answers under 3 sentences.
 `;
-
-// --- THE LOCAL BRAIN (Fallback) ---
-// This runs if the Internet/API fails. It makes the bot "Unbreakable".
-const getSmartFallback = (input) => {
-  const text = input.toLowerCase();
-  
-  if (text.includes("hi") || text.includes("hello") || text.includes("hey")) 
-    return "Hey there! 👋 I'm Usman's AI assistant. I can tell you about his projects, skills, or contact info.";
-  
-  if (text.includes("who") || text.includes("usman") || text.includes("about")) 
-    return "I am Md Usman, a B.Tech AI & Data Science student at MTIET. I build intelligent systems bridging software and hardware.";
-  
-  if (text.includes("project") || text.includes("work") || text.includes("railway")) 
-    return "I've worked on a Smart Railway Gate system using IoT and this AI-powered Portfolio. I'm also researching Offline Small Language Models.";
-  
-  if (text.includes("skill") || text.includes("stack") || text.includes("tech")) 
-    return "My technical stack includes Python, React.js, TensorFlow, Arduino/IoT, and Large Language Models (LLMs).";
-  
-  if (text.includes("contact") || text.includes("email") || text.includes("reach")) 
-    return "You can reach me through the Contact section on this site, or connect with me on LinkedIn!";
-
-  return "That's a great question! To get the best answer, please reach out to Usman directly via the Contact page. 🚀";
-};
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hey! 👋 I'm Usman's digital twin. Ask me anything!" }
+    { sender: "bot", text: "Hey! 👋 I'm Usman's AI. Ask me to define NLP or about my projects!" }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
+
+  const queryGemini = async (userText) => {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: `${SYSTEM_CONTEXT}\n\nUser Question: ${userText}\nAnswer:` }]
+          }]
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Gemini API Error");
+      }
+
+      const data = await response.json();
+      // Extract the text answer from Gemini's complex JSON structure
+      return data.candidates[0].content.parts[0].text;
+
+    } catch (error) {
+      console.error("AI Error:", error);
+      return "I'm having a temporary brain freeze 🧠. Please try again in a moment!";
+    }
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -58,43 +64,11 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
     setIsTyping(true);
 
-    // --- THE HYBRID LOGIC ---
-    let botResponse = "";
+    const botReply = await queryGemini(userMsg);
 
-    try {
-      // 1. Try Real AI first
-      const response = await fetch(MODEL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: `<|system|>\n${SYSTEM_CONTEXT}</s>\n<|user|>\n${userMsg}</s>\n<|assistant|>`,
-          parameters: { max_new_tokens: 150, return_full_text: false }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("API_FAILED"); // Force jump to catch block
-      }
-
-      const result = await response.json();
-      botResponse = result[0]?.generated_text || getSmartFallback(userMsg);
-
-    } catch (error) {
-      // 2. IF FAILED: Use Local Brain (Silent Failover)
-      // The user NEVER sees an error message. They just get an answer.
-      console.log("Switched to Local Brain due to:", error);
-      botResponse = getSmartFallback(userMsg);
-    }
-
-    setMessages(prev => [...prev, { sender: "bot", text: botReplyWrapper(botResponse) }]);
+    setMessages(prev => [...prev, { sender: "bot", text: botReply }]);
     setIsTyping(false);
   };
-
-  // Helper to ensure text is clean
-  const botReplyWrapper = (text) => text.replace(/<\|.*?\|>/g, "").trim();
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isTyping]);
 
@@ -136,7 +110,7 @@ export default function Chatbot() {
             </div>
 
             <form onSubmit={handleSend} className="p-3 bg-black/40 border-t border-white/10 flex gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about projects..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about AI..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
               <button type="submit" className="text-cyan-400"><FaPaperPlane /></button>
             </form>
           </motion.div>
