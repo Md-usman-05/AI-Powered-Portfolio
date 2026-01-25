@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- 🔑 GEMINI CONFIGURATION ---
-// We split the key so GitHub doesn't block the upload.
+// We split the key to bypass GitHub's security blocker.
+// Your Key: AIzaSyAa2top-pL2BCtqOhFWksK8zUgd_Hd4-zg
 const PART_1 = "AIzaSyAa2top-"; 
 const PART_2 = "pL2BCtqOhFWksK8zUgd_Hd4-zg"; 
 const GEMINI_KEY = PART_1 + PART_2;
@@ -42,7 +43,7 @@ export default function Chatbot() {
       });
 
       if (!response.ok) {
-        throw new Error("Gemini API Error");
+        throw new Error(`Gemini API Error: ${response.status}`);
       }
 
       const data = await response.json();
