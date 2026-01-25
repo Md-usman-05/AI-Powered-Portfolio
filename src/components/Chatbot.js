@@ -4,30 +4,41 @@ import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- CONFIGURATION ---
 const PART_1 = "hf_";
-const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your New Key
+const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your Key
 const HF_TOKEN = PART_1 + PART_2;
+// We use a direct URL. If it fails, we fall back to Local Brain.
 const MODEL_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
 
-// --- LOCAL BACKUP BRAIN (The Fail-Safe) ---
-// If Real AI fails, this answers instantly.
-const getLocalResponse = (text) => {
-  const lower = text.toLowerCase();
-  if (lower.includes("hi") || lower.includes("hello")) return "Hey there! 👋 I'm Usman's digital twin. Ask me about his projects!";
-  if (lower.includes("who")) return "I am Md Usman, a B.Tech AI student at MTIET with a passion for building intelligent systems.";
-  if (lower.includes("skill") || lower.includes("stack")) return "My tech stack includes Python, React.js, IoT (Arduino), and Machine Learning.";
-  if (lower.includes("project") || lower.includes("work")) return "I built a 'Smart Railway Gate' system and this AI-powered portfolio. I'm also researching offline LLMs.";
-  if (lower.includes("contact") || lower.includes("email")) return "You can reach me via the Contact page or email me at usman@example.com.";
-  return "That's an interesting question! To give you the best answer, please contact Usman directly via the Contact section. 🚀";
-};
-
 const SYSTEM_CONTEXT = `
-You are Usman's Digital Twin. You are NOT a robot.
-Speak in the first person ("I", "Me"). 
-Usman is a B.Tech AI student at MTIET. Grades: 95% SSC, 90% Inter.
-Skills: Python, React, IoT, AI.
+You are Usman's Digital Twin. 
+Usman is a B.Tech AI student at MTIET. 
+Skills: Python, React, IoT (Arduino), AI.
 Projects: Smart Railway Gate, AI Portfolio.
 Keep answers under 2 sentences.
 `;
+
+// --- THE LOCAL BRAIN (Fallback) ---
+// This runs if the Internet/API fails. It makes the bot "Unbreakable".
+const getSmartFallback = (input) => {
+  const text = input.toLowerCase();
+  
+  if (text.includes("hi") || text.includes("hello") || text.includes("hey")) 
+    return "Hey there! 👋 I'm Usman's AI assistant. I can tell you about his projects, skills, or contact info.";
+  
+  if (text.includes("who") || text.includes("usman") || text.includes("about")) 
+    return "I am Md Usman, a B.Tech AI & Data Science student at MTIET. I build intelligent systems bridging software and hardware.";
+  
+  if (text.includes("project") || text.includes("work") || text.includes("railway")) 
+    return "I've worked on a Smart Railway Gate system using IoT and this AI-powered Portfolio. I'm also researching Offline Small Language Models.";
+  
+  if (text.includes("skill") || text.includes("stack") || text.includes("tech")) 
+    return "My technical stack includes Python, React.js, TensorFlow, Arduino/IoT, and Large Language Models (LLMs).";
+  
+  if (text.includes("contact") || text.includes("email") || text.includes("reach")) 
+    return "You can reach me through the Contact section on this site, or connect with me on LinkedIn!";
+
+  return "That's a great question! To get the best answer, please reach out to Usman directly via the Contact page. 🚀";
+};
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
@@ -38,41 +49,6 @@ export default function Chatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
 
-  const queryHuggingFace = async (userText) => {
-    // 1. Try Real AI (Direct Call - No Proxy to avoid "Busy" errors)
-    const prompt = `<|system|>\n${SYSTEM_CONTEXT}</s>\n<|user|>\n${userText}</s>\n<|assistant|>`;
-
-    try {
-      // We use a timeout to fail fast if the API is slow
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
-      const response = await fetch(MODEL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: { max_new_tokens: 150, return_full_text: false, temperature: 0.7 }
-        }),
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) throw new Error("API Error");
-
-      const result = await response.json();
-      return result[0]?.generated_text || getLocalResponse(userText);
-
-    } catch (error) {
-      console.warn("Real AI failed, switching to Backup Brain:", error);
-      // 2. FALLBACK: Use Local Brain if Real AI fails
-      return getLocalResponse(userText);
-    }
-  };
-
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -82,12 +58,43 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
     setIsTyping(true);
 
-    // Get answer (Real AI or Backup)
-    const botReply = await queryHuggingFace(userMsg);
+    // --- THE HYBRID LOGIC ---
+    let botResponse = "";
 
-    setMessages(prev => [...prev, { sender: "bot", text: botReply }]);
+    try {
+      // 1. Try Real AI first
+      const response = await fetch(MODEL_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HF_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: `<|system|>\n${SYSTEM_CONTEXT}</s>\n<|user|>\n${userMsg}</s>\n<|assistant|>`,
+          parameters: { max_new_tokens: 150, return_full_text: false }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("API_FAILED"); // Force jump to catch block
+      }
+
+      const result = await response.json();
+      botResponse = result[0]?.generated_text || getSmartFallback(userMsg);
+
+    } catch (error) {
+      // 2. IF FAILED: Use Local Brain (Silent Failover)
+      // The user NEVER sees an error message. They just get an answer.
+      console.log("Switched to Local Brain due to:", error);
+      botResponse = getSmartFallback(userMsg);
+    }
+
+    setMessages(prev => [...prev, { sender: "bot", text: botReplyWrapper(botResponse) }]);
     setIsTyping(false);
   };
+
+  // Helper to ensure text is clean
+  const botReplyWrapper = (text) => text.replace(/<\|.*?\|>/g, "").trim();
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isTyping]);
 
@@ -129,7 +136,7 @@ export default function Chatbot() {
             </div>
 
             <form onSubmit={handleSend} className="p-3 bg-black/40 border-t border-white/10 flex gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask me..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about projects..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
               <button type="submit" className="text-cyan-400"><FaPaperPlane /></button>
             </form>
           </motion.div>
