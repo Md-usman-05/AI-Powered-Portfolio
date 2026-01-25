@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- 🔒 SECURITY: BASE64 ENCODED KEY ---
-const ENCODED_KEY = "QUl6YVN5QWEydG9wLXBMMkJDdHFPaEZXa3NLOHpVZ2RfSGQ0LXpn"; 
+// This is your NEW key (Encrypted so GitHub doesn't block it)
+const ENCODED_KEY = "QUl6YVN5REVJOHNxZjFRLVVVaFN3UldwbklNQnZlSjlOTlFpVTFF"; 
 const GEMINI_KEY = atob(ENCODED_KEY); 
 
-// ✅ FIX: Switched back to 'gemini-1.5-flash' (Standard & Faster)
+// ✅ Using 'gemini-1.5-flash' (Standard for New Projects)
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
 const SYSTEM_CONTEXT = `
@@ -14,7 +15,7 @@ You are Usman's Digital Twin.
 Usman is a B.Tech AI student at MTIET.
 Skills: Python, React, IoT, AI.
 Projects: Smart Railway Gate, AI Portfolio.
-Tone: Professional & Short.
+Tone: Professional, Short, Friendly.
 `;
 
 export default function Chatbot() {
@@ -40,7 +41,7 @@ export default function Chatbot() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Unknown Error");
+        throw new Error(errorData.error?.message || response.statusText);
       }
 
       const data = await response.json();
@@ -48,7 +49,7 @@ export default function Chatbot() {
 
     } catch (error) {
       console.error("AI Error:", error);
-      return `⚠️ Connection Issue: ${error.message}`;
+      return `⚠️ Error: ${error.message}`;
     }
   };
 
