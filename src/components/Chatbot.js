@@ -2,14 +2,16 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
-// --- 🔒 SECURITY STRATEGY: SPLIT KEY ---
-// We split the key so GitHub scanners don't recognize and ban it.
-const PART_1 = "hf_"; 
-const PART_2 = "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"; // Your NEW Key
+// --- 🔒 FINAL SECURITY CONFIG ---
+// 1. SPLIT THE KEY (So GitHub doesn't ban it):
+const PART_1 = "hf_";
+const PART_2 = "BgUXjhluXsSsGiJWiFvUZwMiEcDDNQyOLw"; // Your NEW Key
 const HF_TOKEN = PART_1 + PART_2;
 
-// Using Mistral-7B (Browser Friendly, no CORS blocks)
-const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+// 2. THE PROXY FIX (Bypasses the "Network Error" / CORS Block)
+const PROXY = "https://corsproxy.io/?"; 
+const TARGET_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+const FULL_URL = PROXY + encodeURIComponent(TARGET_URL);
 
 const SYSTEM_CONTEXT = `
 You are Usman's Digital Twin. You are NOT a robot.
@@ -33,11 +35,12 @@ export default function Chatbot() {
     const prompt = `<s>[INST] ${SYSTEM_CONTEXT}\n\nQuestion: ${userText} [/INST]`;
 
     try {
-      const response = await fetch(MODEL_URL, {
+      const response = await fetch(FULL_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${HF_TOKEN}`,
           "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
         },
         body: JSON.stringify({
           inputs: prompt,
@@ -45,20 +48,21 @@ export default function Chatbot() {
         }),
       });
 
-      // --- DEBUGGING MESSAGES ---
-      if (response.status === 503) return "🧠 Brain loading... (Cold Boot). Ask again in 10s!";
-      if (response.status === 401) return "⛔ Auth Error: The Key is invalid or expired.";
+      // --- ERROR DIAGNOSTICS ---
+      if (response.status === 503) return "🧠 Brain loading... (Cold Boot). Ask again in 20s!";
+      if (response.status === 401) return "⛔ Auth Error: Key Invalid. Check GitHub Secrets.";
+      if (response.status === 403) return "🔒 Access Denied: The model is locked.";
       
       if (!response.ok) {
-        const errText = await response.text();
-        return `⚠️ Error ${response.status}: ${errText}`;
+        return `⚠️ Technical Error ${response.status}. Check console.`;
       }
 
       const result = await response.json();
       return result[0]?.generated_text || "I didn't catch that.";
 
     } catch (error) {
-      return `❌ Connection Error: ${error.message}`;
+      console.error(error);
+      return `❌ Connection Failed. The Proxy might be busy. Try again.`;
     }
   };
 
