@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- CONFIGURATION ---
-const HF_TOKEN = "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"; 
+const HF_TOKEN = "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"; 
 // ✅ SWITCHING TO MISTRAL-7B (Fixes the "Browser Security" block)
 const MODEL_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
 
