@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes } from "react-icons/fa";
 
 // --- 🔒 SECURITY: BASE64 ENCODED KEY ---
-// Your Key (Encoded so GitHub doesn't block it)
 const ENCODED_KEY = "QUl6YVN5QWEydG9wLXBMMkJDdHFPaEZXa3NLOHpVZ2RfSGQ0LXpn"; 
 const GEMINI_KEY = atob(ENCODED_KEY); 
 
-// ✅ FIX: Switched to 'gemini-pro' (The stable, universally available model)
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`;
+// ✅ FIX: Switched back to 'gemini-1.5-flash' (Standard & Faster)
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
 
 const SYSTEM_CONTEXT = `
 You are Usman's Digital Twin.
