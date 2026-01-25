@@ -140,7 +140,6 @@ export default function About() {
               </li>
             </ul>
           </TiltCard>
-
         </motion.div>
       </div>
     </div>

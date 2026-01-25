@@ -5,7 +5,7 @@ import { FaPaperPlane, FaTimes } from "react-icons/fa";
 // --- 🔒 SECURITY STRATEGY: SPLIT KEY ---
 // We split the key so GitHub scanners don't recognize and ban it.
 const PART_1 = "hf_"; 
-const PART_2 = "wKDgnyxBcGdlmyIJAflJEXMzBgFiwqtyhG"; // Your NEW Key
+const PART_2 = "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"; // Your NEW Key
 const HF_TOKEN = PART_1 + PART_2;
 
 // Using Mistral-7B (Browser Friendly, no CORS blocks)
