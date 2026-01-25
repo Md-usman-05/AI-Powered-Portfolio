@@ -7,16 +7,14 @@ import { pipeline, env } from "@xenova/transformers";
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
-// --- 🧠 IMPROVED CONTEXT ---
-// We format this strictly so the AI reads it like a database.
+// --- 🧠 YOUR DATA ---
 const PORTFOLIO_CONTEXT = `
-Information about Md Usman:
-- Identity: I am an AI assistant for Md Usman.
-- Education: B.Tech in AI & Data Science at MTIET.
-- Skills: Python, React.js, IoT (Arduino), Machine Learning, NLP.
-- Projects: Smart Railway Gate, AI-Powered Portfolio, Offline SLMs.
-- Goal: To build intelligent systems that bridge software and hardware.
-- Contact: You can contact Usman via the form on this website.
+Identity: I am an AI assistant for Md Usman.
+Education: B.Tech in AI & Data Science at MTIET.
+Skills: Python, React.js, IoT (Arduino), Machine Learning, NLP.
+Projects: Smart Railway Gate, AI-Powered Portfolio, Offline SLMs.
+Goal: To build intelligent systems that bridge software and hardware.
+Contact: You can contact Usman via the form on this website.
 `;
 
 export default function Chatbot() {
@@ -25,7 +23,6 @@ export default function Chatbot() {
     { sender: "bot", text: "Initializing Smart Offline Brain... (Downloading ~300MB) 🧠" }
   ]);
   const [input, setInput] = useState("");
-  const [isModelLoading, setIsModelLoading] = useState(true);
   const [generator, setGenerator] = useState(null);
   const endRef = useRef(null);
 
@@ -33,12 +30,11 @@ export default function Chatbot() {
     const loadModel = async () => {
       try {
         console.log("Downloading AI Model...");
-        // ✅ UPGRADE: Using 'LaMini-Flan-T5-248M' (Much smarter than 77M)
+        // Using 'LaMini-Flan-T5-248M' for better accuracy
         const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M');
         setGenerator(() => pipe);
         
-        setMessages([{ sender: "bot", text: "System Online! ✅ I am running 100% locally. I'm smarter now!" }]);
-        setIsModelLoading(false);
+        setMessages([{ sender: "bot", text: "System Online! ✅ I can now answer about Usman OR technical concepts like NLP." }]);
       } catch (error) {
         console.error("Model Load Failed", error);
         setMessages([{ sender: "bot", text: "⚠️ Error loading Brain. Refresh page." }]);
@@ -64,21 +60,23 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "bot", text: "Thinking... 💭", id: thinkingId }]);
 
     try {
-      // --- 🧠 SMART PROMPT ENGINEERING ---
-      // We explicitly tell it to use the Context OR General Knowledge
-      const prompt = `
-Instruction: Answer the question truthfully. If the question is about Md Usman, use the Context below. If it is a general question (like capitals), answer from your knowledge.
+      // --- 🧠 THE SMART SWITCHER ---
+      // 1. Check if the question is about YOU (Usman)
+      const isPersonal = userMsg.toLowerCase().match(/(usman|who|skills|projects|contact|email|about|he|his|resume|cv)/);
 
-Context:
-${PORTFOLIO_CONTEXT}
-
-Question: ${userMsg}
-
-Answer:`;
+      let prompt = "";
+      
+      if (isPersonal) {
+        // CASE A: Personal Question -> Feed it your Context
+        prompt = `Context: ${PORTFOLIO_CONTEXT} Question: ${userMsg} Answer:`;
+      } else {
+        // CASE B: General Question -> Feed it ONLY the question (so it uses its own brain)
+        prompt = `Question: Define or explain ${userMsg} clearly. Answer:`;
+      }
 
       const output = await generator(prompt, {
         max_new_tokens: 150,
-        temperature: 0.3, // Lower temperature = More factual/less hallucination
+        temperature: 0.5, // Slightly creative
         repetition_penalty: 1.2
       });
 
@@ -115,8 +113,8 @@ Answer:`;
           >
             <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${isModelLoading ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
-                <span className="text-white font-bold text-sm">Smart Offline AI</span>
+                <span className="w-2 h-2 rounded-full animate-pulse bg-green-500"></span>
+                <span className="text-white font-bold text-sm">Offline AI (Smart Mode)</span>
               </div>
               <button onClick={() => setOpen(false)}><FaTimes className="text-white" /></button>
             </div>
