@@ -14,6 +14,7 @@ Skills: Python, React.js, IoT (Arduino), Machine Learning, NLP.
 Projects: Smart Railway Gate, AI-Powered Portfolio, Offline SLMs.
 Goal: To build intelligent systems that bridge software and hardware.
 Contact: You can contact Usman via the form on this website.
+Instruction: If the user says "hi" or "hello", welcome them and introduce yourself as Usman's AI.
 `;
 
 export default function Chatbot() {
@@ -35,8 +36,7 @@ export default function Chatbot() {
         setStatus("downloading");
         console.log("Downloading High-Performance 783M Model...");
         
-        // 🚀 UPGRADE: Using 'LaMini-Flan-T5-783M' (The Smartest Browser Model)
-        // Note: This is approx 900MB. It provides the best accuracy.
+        // Using the Smartest Browser Model
         const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-783M', {
           progress_callback: (data) => {
             if (data.status === 'progress') {
@@ -47,7 +47,7 @@ export default function Chatbot() {
 
         setGenerator(() => pipe);
         setStatus("ready");
-        setMessages([{ sender: "bot", text: "System Online! ✅ I am running the 'Large' offline brain (783M). Ask me anything!" }]);
+        setMessages([{ sender: "bot", text: "System Online! ✅ I am running the 'Large' offline brain. Ask me anything!" }]);
         
       } catch (error) {
         console.error("Model Load Failed", error);
@@ -69,7 +69,7 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
 
     if (!generator) {
-      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Brain is still loading (Large Model)... please wait!" }]);
+      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Brain is still loading... please wait!" }]);
       return;
     }
 
@@ -77,14 +77,23 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "bot", text: "Thinking... 💭", id: thinkingId }]);
 
     try {
-      const isPersonal = userMsg.toLowerCase().match(/(usman|who|skills|projects|contact|email|about|he|his|resume|cv)/);
-      let prompt = isPersonal 
-        ? `Context: ${PORTFOLIO_CONTEXT} Question: ${userMsg} Answer:`
-        : `Question: Explain ${userMsg} in detail. Answer:`; // Changed "Define" to "Explain in detail" for better answers
+      // --- 🧠 FIXED LOGIC SWITCHER ---
+      // 1. Added "hi", "hello", "hey" to the list so it uses your Bio Context.
+      const isPersonal = userMsg.toLowerCase().match(/(hi|hello|hey|greetings|usman|who|skills|projects|contact|email|about|he|his|resume|cv)/);
+      
+      let prompt = "";
+
+      if (isPersonal) {
+         // CASE A: Personal/Greeting -> Use Portfolio Context
+         prompt = `Context: ${PORTFOLIO_CONTEXT} User: ${userMsg} Answer:`;
+      } else {
+         // CASE B: General Question -> Less strict prompt (Fixed the "Explain in detail" issue)
+         prompt = `Question: Answer the following question accurately. ${userMsg} Answer:`;
+      }
 
       const output = await generator(prompt, {
-        max_new_tokens: 200, // Increased token limit for longer answers
-        temperature: 0.3,    // Lower temp for accuracy
+        max_new_tokens: 200,
+        temperature: 0.4, 
         repetition_penalty: 1.2
       });
 
@@ -149,7 +158,7 @@ export default function Chatbot() {
               {messages.length === 0 && status === 'downloading' && (
                  <div className="text-center text-slate-400 text-xs mt-10">
                     Downloading High-Res Neural Network (~900MB)...<br/>
-                    This only happens once.
+                    This only happens once per user.
                  </div>
               )}
               
