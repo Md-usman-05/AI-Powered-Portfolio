@@ -1,71 +1,50 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaPaperPlane, FaTimes, FaRobot } from "react-icons/fa";
+// Import the Offline AI library
+import { pipeline, env } from "@xenova/transformers";
 
-// --- 🔒 SECURITY: BASE64 ENCODED KEY ---
-// Your Fresh Key: AIzaSyDEI8sqf1Q-UUhSwRWpnIMBveJ9NNQiU1E
-const ENCODED_KEY = "QUl6YVN5REVJOHNxZjFRLVVVaFN3UldwbklNQnZlSjlOTlFpVTFF"; 
-const GEMINI_KEY = atob(ENCODED_KEY); 
+// Skip local model checks to avoid errors on GitHub Pages
+env.allowLocalModels = false;
+env.useBrowserCache = true;
 
 const SYSTEM_CONTEXT = `
-You are Usman's Digital Twin.
-Usman is a B.Tech AI student at MTIET.
-Skills: Python, React, IoT, AI.
+You are Usman's AI Assistant.
+Usman is a B.Tech AI Student at MTIET.
+Skills: Python, React, IoT, AI, NLP.
 Projects: Smart Railway Gate, AI Portfolio.
-Tone: Professional, Short, Friendly.
+Answer the question clearly.
 `;
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hey! 👋 I'm Usman's AI. Ask me to define NLP!" }
+    { sender: "bot", text: "Initializing Offline AI... (This downloads ~100MB, please wait!) 🧠" }
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isModelLoading, setIsModelLoading] = useState(true);
+  const [generator, setGenerator] = useState(null);
   const endRef = useRef(null);
 
-  // --- 🧠 SMART BRAIN SWITCHER ---
-  // If one model fails, it tries the next one automatically.
-  const queryGemini = async (userText) => {
-    const models = [
-      "gemini-1.5-flash",       // Option 1: Latest & Fastest
-      "gemini-1.5-flash-001",   // Option 2: Specific Version
-      "gemini-pro",             // Option 3: Stable
-      "gemini-1.0-pro"          // Option 4: Legacy
-    ];
-
-    for (const model of models) {
+  // --- 🧠 LOAD THE BRAIN (Runs once on start) ---
+  useEffect(() => {
+    const loadModel = async () => {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{ text: `${SYSTEM_CONTEXT}\n\nUser Question: ${userText}\nAnswer:` }]
-              }]
-            }),
-          }
-        );
-
-        const data = await response.json();
-
-        // If Google sends an error, throw it so we catch it and try the next model
-        if (data.error) throw new Error(data.error.message);
+        console.log("Downloading AI Model...");
+        // We use 'LaMini-Flan-T5-77M' (Small & Fast)
+        const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-77M');
+        setGenerator(() => pipe);
         
-        // If successful, return the answer immediately
-        return data.candidates[0].content.parts[0].text;
-
+        setMessages([{ sender: "bot", text: "System Online! ✅ I am running 100% locally in your browser. No internet needed for answers now." }]);
+        setIsModelLoading(false);
+        console.log("Model Loaded!");
       } catch (error) {
-        console.warn(`Model ${model} failed. Trying next...`);
-        // Continue loop to try next model
+        console.error("Model Load Failed", error);
+        setMessages([{ sender: "bot", text: "⚠️ Error loading Offline Brain. Check console." }]);
       }
-    }
-
-    // If ALL models fail:
-    return "⚠️ My brain is having a connection hiccup. Please try again in 1 minute!";
-  };
+    };
+    loadModel();
+  }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -74,15 +53,36 @@ export default function Chatbot() {
     const userMsg = input.trim();
     setInput(""); 
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
-    setIsTyping(true);
 
-    const botReply = await queryGemini(userMsg);
+    if (!generator) {
+      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Brain is still loading... give me a few seconds!" }]);
+      return;
+    }
 
-    setMessages(prev => [...prev, { sender: "bot", text: botReply }]);
-    setIsTyping(false);
+    // Show a temporary "Thinking..." bubble
+    const thinkingId = Date.now();
+    setMessages(prev => [...prev, { sender: "bot", text: "Thinking... 💭", id: thinkingId }]);
+
+    try {
+      // --- RUN THE AI LOCALLY ---
+      const output = await generator(`${SYSTEM_CONTEXT} User: ${userMsg} Answer:`, {
+        max_new_tokens: 100,
+        temperature: 0.7,
+        repetition_penalty: 1.2
+      });
+
+      const botReply = output[0].generated_text;
+      
+      // Remove "Thinking..." and add real answer
+      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: botReply }));
+
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: "❌ Logic Error." }));
+    }
   };
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isTyping]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   return (
     <>
@@ -91,9 +91,9 @@ export default function Chatbot() {
           <motion.button
             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
             whileHover={{ scale: 1.1 }} onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-[999] w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+            className="fixed bottom-6 right-6 z-[999] w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.5)] bg-black"
           >
-            <img src={process.env.PUBLIC_URL + "/images/usman.jpeg"} alt="Usman" className="w-full h-full object-cover" />
+             <FaRobot className="text-cyan-400 w-8 h-8 m-auto mt-4" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -102,10 +102,13 @@ export default function Chatbot() {
         {open && (
           <motion.div
             initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
-            className="fixed bottom-6 right-6 w-[90vw] md:w-[380px] h-[550px] bg-[#0a0a0a]/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col font-sans z-[1000]"
+            className="fixed bottom-6 right-6 w-[90vw] md:w-[380px] h-[550px] bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col font-sans z-[1000]"
           >
             <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
-              <span className="text-white font-bold text-sm">Md Usman (AI)</span>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full animate-pulse ${isModelLoading ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
+                <span className="text-white font-bold text-sm">Offline AI (Browser)</span>
+              </div>
               <button onClick={() => setOpen(false)}><FaTimes className="text-white" /></button>
             </div>
 
@@ -117,12 +120,11 @@ export default function Chatbot() {
                   </div>
                 </div>
               ))}
-              {isTyping && <div className="text-xs text-cyan-500 animate-pulse">Thinking...</div>}
               <div ref={endRef} />
             </div>
 
             <form onSubmit={handleSend} className="p-3 bg-black/40 border-t border-white/10 flex gap-2">
-              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about AI..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask anything..." className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
               <button type="submit" className="text-cyan-400"><FaPaperPlane /></button>
             </form>
           </motion.div>

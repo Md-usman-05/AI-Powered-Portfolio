@@ -1,6 +1,6 @@
 {
   "name": "my-pf",
-  "homepage":  "https://Md-usman-05.github.io/AI-Powered-Portfolio",
+  "homepage": "https://Md-usman-05.github.io/AI-Powered-Portfolio",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -9,6 +9,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^13.5.0",
+    "@xenova/transformers": "^2.17.2",
     "framer-motion": "^12.25.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
