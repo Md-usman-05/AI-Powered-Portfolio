@@ -1,46 +1,47 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPaperPlane, FaTimes, FaRobot } from "react-icons/fa";
-// Import the Offline AI library
 import { pipeline, env } from "@xenova/transformers";
 
-// Skip local model checks to avoid errors on GitHub Pages
+// Configuration
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
-const SYSTEM_CONTEXT = `
-You are Usman's AI Assistant.
-Usman is a B.Tech AI Student at MTIET.
-Skills: Python, React, IoT, AI, NLP.
-Projects: Smart Railway Gate, AI Portfolio.
-Answer the question clearly.
+// --- 🧠 IMPROVED CONTEXT ---
+// We format this strictly so the AI reads it like a database.
+const PORTFOLIO_CONTEXT = `
+Information about Md Usman:
+- Identity: I am an AI assistant for Md Usman.
+- Education: B.Tech in AI & Data Science at MTIET.
+- Skills: Python, React.js, IoT (Arduino), Machine Learning, NLP.
+- Projects: Smart Railway Gate, AI-Powered Portfolio, Offline SLMs.
+- Goal: To build intelligent systems that bridge software and hardware.
+- Contact: You can contact Usman via the form on this website.
 `;
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Initializing Offline AI... (This downloads ~100MB, please wait!) 🧠" }
+    { sender: "bot", text: "Initializing Smart Offline Brain... (Downloading ~300MB) 🧠" }
   ]);
   const [input, setInput] = useState("");
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [generator, setGenerator] = useState(null);
   const endRef = useRef(null);
 
-  // --- 🧠 LOAD THE BRAIN (Runs once on start) ---
   useEffect(() => {
     const loadModel = async () => {
       try {
         console.log("Downloading AI Model...");
-        // We use 'LaMini-Flan-T5-77M' (Small & Fast)
-        const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-77M');
+        // ✅ UPGRADE: Using 'LaMini-Flan-T5-248M' (Much smarter than 77M)
+        const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M');
         setGenerator(() => pipe);
         
-        setMessages([{ sender: "bot", text: "System Online! ✅ I am running 100% locally in your browser. No internet needed for answers now." }]);
+        setMessages([{ sender: "bot", text: "System Online! ✅ I am running 100% locally. I'm smarter now!" }]);
         setIsModelLoading(false);
-        console.log("Model Loaded!");
       } catch (error) {
         console.error("Model Load Failed", error);
-        setMessages([{ sender: "bot", text: "⚠️ Error loading Offline Brain. Check console." }]);
+        setMessages([{ sender: "bot", text: "⚠️ Error loading Brain. Refresh page." }]);
       }
     };
     loadModel();
@@ -55,30 +56,38 @@ export default function Chatbot() {
     setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
 
     if (!generator) {
-      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Brain is still loading... give me a few seconds!" }]);
+      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Still loading... please wait!" }]);
       return;
     }
 
-    // Show a temporary "Thinking..." bubble
     const thinkingId = Date.now();
     setMessages(prev => [...prev, { sender: "bot", text: "Thinking... 💭", id: thinkingId }]);
 
     try {
-      // --- RUN THE AI LOCALLY ---
-      const output = await generator(`${SYSTEM_CONTEXT} User: ${userMsg} Answer:`, {
-        max_new_tokens: 100,
-        temperature: 0.7,
+      // --- 🧠 SMART PROMPT ENGINEERING ---
+      // We explicitly tell it to use the Context OR General Knowledge
+      const prompt = `
+Instruction: Answer the question truthfully. If the question is about Md Usman, use the Context below. If it is a general question (like capitals), answer from your knowledge.
+
+Context:
+${PORTFOLIO_CONTEXT}
+
+Question: ${userMsg}
+
+Answer:`;
+
+      const output = await generator(prompt, {
+        max_new_tokens: 150,
+        temperature: 0.3, // Lower temperature = More factual/less hallucination
         repetition_penalty: 1.2
       });
 
       const botReply = output[0].generated_text;
-      
-      // Remove "Thinking..." and add real answer
       setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: botReply }));
 
     } catch (error) {
       console.error(error);
-      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: "❌ Logic Error." }));
+      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: "❌ Error processing." }));
     }
   };
 
@@ -107,7 +116,7 @@ export default function Chatbot() {
             <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full animate-pulse ${isModelLoading ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
-                <span className="text-white font-bold text-sm">Offline AI (Browser)</span>
+                <span className="text-white font-bold text-sm">Smart Offline AI</span>
               </div>
               <button onClick={() => setOpen(false)}><FaTimes className="text-white" /></button>
             </div>
