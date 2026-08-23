@@ -29,21 +29,21 @@ export const projectsData = [
     ],
     techStack: ["Python", "C/C++", "LoRa SX1262", "Embedded Systems", "Hardware Integration"]
   },
-  {
-    id: "swan-bot",
-    title: "SWAN Bot",
-    category: "Edge Computing & AI",
-    shortDesc: "An offline-first desktop conversational AI built with Electron and highly quantized Small Language Models.",
-    image: "/images/swan-bot.jpg",
-    github: "#",
-    overview: "Data privacy shouldn't require compromising on intelligence. I developed SWAN Bot to run entirely at the edge without internet access. Utilizing an Electron-based frontend and quantized Small Language Models (SLMs) like TinyLlama and Phi-3, this application delivers a highly responsive conversational experience using local computing resources.",
-    architecture: [
-      "Built a cross-platform desktop frontend utilizing HTML, CSS, JavaScript, and Electron.",
-      "Integrated quantized SLMs (TinyLlama, Phi-3) directly into the local environment for low-resource inference.",
-      "Optimized prompt processing and context windows to ensure rapid, real-time query resolution on consumer hardware."
-    ],
-    techStack: ["Electron", "JavaScript", "Phi-3", "TinyLlama", "Local Edge AI"]
-  },
+  // {
+  //   id: "swan-bot",
+  //   title: "SWAN Bot",
+  //   category: "Edge Computing & AI",
+  //   shortDesc: "An offline-first desktop conversational AI built with Electron and highly quantized Small Language Models.",
+  //   image: "/images/swan-bot.jpg",
+  //   github: "#",
+  //   overview: "Data privacy shouldn't require compromising on intelligence. I developed SWAN Bot to run entirely at the edge without internet access. Utilizing an Electron-based frontend and quantized Small Language Models (SLMs) like TinyLlama and Phi-3, this application delivers a highly responsive conversational experience using local computing resources.",
+  //   architecture: [
+  //     "Built a cross-platform desktop frontend utilizing HTML, CSS, JavaScript, and Electron.",
+  //     "Integrated quantized SLMs (TinyLlama, Phi-3) directly into the local environment for low-resource inference.",
+  //     "Optimized prompt processing and context windows to ensure rapid, real-time query resolution on consumer hardware."
+  //   ],
+  //   techStack: ["Electron", "JavaScript", "Phi-3", "TinyLlama", "Local Edge AI"]
+  // },
   {
     id: "predictive-energy",
     title: "Electricity Bill Forecaster",
