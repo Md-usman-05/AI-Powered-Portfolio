@@ -1,195 +1,199 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaPaperPlane, FaTimes, FaRobot } from "react-icons/fa";
-import { pipeline, env } from "@xenova/transformers";
-
-// Configuration
-env.allowLocalModels = false;
-env.useBrowserCache = true;
-
-const PORTFOLIO_CONTEXT = `
-Identity: I am an AI assistant for Md Usman.
-Education: B.Tech in AI & Data Science at MTIET.
-Skills: Python, React.js, IoT (Arduino), Machine Learning, NLP.
-Projects: Smart Railway Gate, AI-Powered Portfolio, Offline SLMs.
-Goal: To build intelligent systems that bridge software and hardware.
-Contact: You can contact Usman via the form on this website.
-`;
+import { FaRobot, FaTimes, FaPaperPlane, FaUser } from "react-icons/fa";
+import { CreateMLCEngine } from "@mlc-ai/web-llm";
 
 export default function Chatbot() {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [generator, setGenerator] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
   
-  // --- 📊 PROGRESS BAR STATE ---
-  const [progress, setProgress] = useState(0); 
-  const [status, setStatus] = useState("initiating"); 
-  const endRef = useRef(null);
+  // AI Engine States
+  const [engine, setEngine] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [loadingText, setLoadingText] = useState("Ready to initialize AI...");
+  
+  const messagesEndRef = useRef(null);
 
-  useEffect(() => {
-    const loadModel = async () => {
-      if (generator) return;
+  const [messages, setMessages] = useState([
+    { 
+      role: "bot", 
+      text: "Hello! I am Usman's local AI agent. I run entirely in your browser using WebGPU. Ask me about his architecture!" 
+    }
+  ]);
 
-      try {
-        setStatus("downloading");
-        console.log("Downloading High-Performance 783M Model...");
-        
-        // Using the Smartest Browser Model
-        const pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-783M', {
-          progress_callback: (data) => {
-            if (data.status === 'progress') {
-              setProgress(Math.round(data.progress));
-            }
-          }
-        });
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => { scrollToBottom(); }, [messages, isTyping]);
 
-        setGenerator(() => pipe);
-        setStatus("ready");
-        setMessages([{ sender: "bot", text: "System Online! ✅ I am running the 'Large' offline brain. Ask me anything!" }]);
-        
-      } catch (error) {
-        console.error("Model Load Failed", error);
-        setMessages([{ sender: "bot", text: "⚠️ Error loading Brain. Please refresh." }]);
-      }
-    };
+  // --- 1. BOOT UP THE REAL AI ---
+  const initializeAI = async () => {
+    if (engine || isInitializing) return;
+    setIsInitializing(true);
     
-    if (open && !generator) {
-      loadModel();
-    }
-  }, [open, generator]);
-
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMsg = input.trim();
-    setInput(""); 
-    setMessages(prev => [...prev, { sender: "user", text: userMsg }]);
-
-    if (!generator) {
-      setMessages(prev => [...prev, { sender: "bot", text: "🧠 Brain is still loading... please wait!" }]);
-      return;
-    }
-
-    const thinkingId = Date.now();
-    setMessages(prev => [...prev, { sender: "bot", text: "Thinking... 💭", id: thinkingId }]);
-
     try {
-      // --- 🧠 FIXED PROMPT ENGINEERING ---
-      let prompt = "";
-      const lowerMsg = userMsg.toLowerCase();
+      const initProgressCallback = (progress) => {
+        setLoadingText(progress.text); // Shows "Fetching parameters 20%..."
+      };
 
-      // 1. GREETING HANDLER (Fixes the "Hi" error)
-      if (lowerMsg.match(/^(hi|hello|hey|greetings|hola)/)) {
-        // We tell the AI *what to do* instead of just sending "hi"
-        prompt = `Instruction: The user said "${userMsg}". Write a friendly welcome message introducing yourself as Usman's AI Assistant. Answer:`;
-      } 
-      // 2. PERSONAL QUESTION HANDLER
-      else if (lowerMsg.match(/(usman|who|skills|projects|contact|email|about|he|his|resume|cv)/)) {
-        prompt = `Instruction: Answer this question based on the Context below. Context: ${PORTFOLIO_CONTEXT} Question: ${userMsg} Answer:`;
-      } 
-      // 3. GENERAL QUESTION HANDLER
-      else {
-        prompt = `Instruction: Answer the following question accurately and clearly. Question: ${userMsg} Answer:`;
-      }
-
-      const output = await generator(prompt, {
-        max_new_tokens: 200,
-        temperature: 0.5, 
-        repetition_penalty: 1.2
-      });
-
-      const botReply = output[0].generated_text;
-      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: botReply }));
-
+      // Microsoft's Phi-3: extremely smart, highly quantized for browsers
+      const selectedModel = "Phi-3-mini-4k-instruct-q4f16_1-MLC";
+      
+      const newEngine = await CreateMLCEngine(selectedModel, { initProgressCallback });
+      setEngine(newEngine);
+      setLoadingText("AI Engine Online.");
     } catch (error) {
-      console.error(error);
-      setMessages(prev => prev.filter(m => m.id !== thinkingId).concat({ sender: "bot", text: "❌ Logic Error." }));
+      console.error("WebGPU Error:", error);
+      setLoadingText("Error: WebGPU not supported on this device.");
     }
   };
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Trigger AI boot sequence when they open the chat for the first time
+  useEffect(() => {
+    if (isOpen && !engine && !isInitializing) {
+      initializeAI();
+    }
+  }, [isOpen]);
+
+
+  // --- 2. TALK TO THE AI ---
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || !engine) return;
+
+    const userMsg = input.trim();
+    setMessages(prev => [...prev, { role: "user", text: userMsg }]);
+    setInput("");
+    setIsTyping(true);
+
+    try {
+      // Create the context window with your exact resume
+      const chatContext = [
+        { 
+          role: "system", 
+          content: "You are a helpful AI assistant built by Md Usman, an AI & Data Science Engineer. Keep answers brief (1-2 sentences). Usman built SWAN Gateway (IoT/LoRa), SWAN Bot (Offline LLM), and BugHunt. He goes to Mother Theresa Institute. He likes chess and local SLMs. Guide users to hire him or view his projects." 
+        },
+        ...messages.map(m => ({ role: m.role === "bot" ? "assistant" : "user", content: m.text })),
+        { role: "user", content: userMsg }
+      ];
+
+      // Ask the model for an answer
+      const reply = await engine.chat.completions.create({ messages: chatContext });
+      
+      setMessages(prev => [...prev, { role: "bot", text: reply.choices[0].message.content }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: "bot", text: "System error: Context engine overloaded." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
 
   return (
-    <>
+    <div className="fixed bottom-6 right-6 z-50 font-sans">
+      
       <AnimatePresence>
-        {!open && (
-          <motion.button
-            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-            whileHover={{ scale: 1.1 }} onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-[999] w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.5)] bg-black"
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-20 right-0 w-[340px] h-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
-             <FaRobot className="text-cyan-400 w-8 h-8 m-auto mt-4" />
-             <div className={`absolute top-2 right-2 w-3 h-3 rounded-full border border-black ${status === 'ready' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></div>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
-            className="fixed bottom-6 right-6 w-[90vw] md:w-[380px] h-[550px] bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl flex flex-col font-sans z-[1000]"
-          >
-            <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${status === 'ready' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                <span className="text-white font-bold text-sm">
-                  {status === 'ready' ? 'Offline AI (Large)' : 'Loading Large Brain...'}
-                </span>
+            {/* Header */}
+            <div className="bg-[#1e3a8a] px-5 py-4 flex justify-between items-center text-white">
+              <div className="flex items-center gap-3">
+                <div className="relative flex items-center justify-center w-8 h-8 bg-white/20 rounded-full">
+                  <FaRobot size={16} />
+                  {engine && <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-400 border border-[#1e3a8a] rounded-full"></span>}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm tracking-wide">Ask Usman (AI)</h3>
+                  <p className="text-[10px] text-blue-200 font-mono">Phi-3 Local WebGPU</p>
+                </div>
               </div>
-              <button onClick={() => setOpen(false)}><FaTimes className="text-white" /></button>
+              <button onClick={() => setIsOpen(false)} className="text-white/70 hover:text-white transition-colors cursor-pointer p-1">
+                <FaTimes size={18} />
+              </button>
             </div>
 
-            {status === 'downloading' && (
-              <div className="px-4 py-2 bg-black/20">
-                <div className="flex justify-between text-xs text-cyan-400 mb-1">
-                  <span>Downloading 783M Model...</span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-1.5">
-                  <div 
-                    className="bg-cyan-500 h-1.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.length === 0 && status === 'downloading' && (
-                 <div className="text-center text-slate-400 text-xs mt-10">
-                    Downloading High-Res Neural Network (~900MB)...<br/>
-                    This only happens once per user.
-                 </div>
-              )}
+            {/* Chat Area */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50 scrollbar-hide">
               
-              {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] px-4 py-2 text-sm rounded-xl ${m.sender === 'user' ? 'bg-cyan-600 text-white' : 'bg-white/10 text-slate-300'}`}>
-                    {m.text}
+              {/* Engine Status Bar */}
+              {!engine && (
+                <div className="text-xs font-mono text-[#0284c7] bg-sky-50 border border-sky-100 p-2 rounded text-center mb-4">
+                  {loadingText}
+                </div>
+              )}
+
+              {messages.map((msg, idx) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={idx}
+                  className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.role === "bot" && (
+                    <div className="w-6 h-6 rounded-full bg-slate-200 flex justify-center items-center shrink-0 text-[#1e3a8a]">
+                      <FaRobot size={10} />
+                    </div>
+                  )}
+                  
+                  <div className={`px-4 py-2.5 max-w-[80%] text-sm leading-relaxed ${
+                    msg.role === "user" 
+                      ? "bg-[#1e3a8a] text-white rounded-2xl rounded-br-sm shadow-sm" 
+                      : "bg-white text-slate-700 border border-slate-200 rounded-2xl rounded-bl-sm shadow-sm"
+                  }`}>
+                    {msg.text}
+                  </div>
+                </motion.div>
+              ))}
+
+              {isTyping && (
+                <div className="flex items-end gap-2 justify-start">
+                  <div className="w-6 h-6 rounded-full bg-slate-200 flex justify-center items-center shrink-0 text-[#1e3a8a]"><FaRobot size={10} /></div>
+                  <div className="px-4 py-3 bg-white border border-slate-200 rounded-2xl rounded-bl-sm shadow-sm flex gap-1 items-center">
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></span>
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }}></span>
                   </div>
                 </div>
-              ))}
-              <div ref={endRef} />
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSend} className="p-3 bg-black/40 border-t border-white/10 flex gap-2">
+            {/* Input Area */}
+            <form onSubmit={handleSend} className="p-4 bg-white border-t border-slate-200 flex items-center gap-2">
               <input 
-                value={input} 
-                onChange={(e) => setInput(e.target.value)} 
-                placeholder={status === 'ready' ? "Ask anything..." : "Initializing..."} 
-                disabled={status !== 'ready'}
-                className="flex-1 bg-transparent text-white text-sm focus:outline-none disabled:opacity-50" 
+                type="text" 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={engine ? "Ask me anything..." : "Booting Engine..."}
+                disabled={!engine}
+                className="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:bg-white transition-colors disabled:opacity-50"
               />
-              <button type="submit" disabled={status !== 'ready'} className="text-cyan-400 disabled:opacity-50">
-                <FaPaperPlane />
+              <button 
+                type="submit" 
+                disabled={!input.trim() || !engine}
+                className="w-10 h-10 rounded-full bg-[#1e3a8a] text-white flex items-center justify-center shrink-0 hover:bg-[#172e6e] disabled:opacity-50 transition-colors shadow-sm"
+              >
+                <FaPaperPlane size={12} className="ml-0.5" />
               </button>
             </form>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+
+      {/* Floating Toggle Button */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:-translate-y-1 ${
+          isOpen ? "bg-slate-800 text-white shadow-slate-800/30 rotate-90" : "bg-[#1e3a8a] text-white shadow-[#1e3a8a]/30"
+        }`}
+      >
+        {isOpen ? <FaTimes size={20} /> : <FaRobot size={24} />}
+      </button>
+
+    </div>
   );
 }

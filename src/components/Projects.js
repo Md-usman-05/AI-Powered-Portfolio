@@ -2,76 +2,105 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FaArrowRight, FaGithub } from 'react-icons/fa';
 import { Link } from 'react-router-dom'; 
-import TiltCard from '../components/TiltCard';
-import { projectsData } from "../data/ProjectsData"; // Import Shared Data
+import { projectsData } from "../data/ProjectsData"; 
 
 export default function Projects() {
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
+    visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
   };
 
   const cardVariants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.6 } }
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
   };
 
   return (
-    <section className="min-h-screen pt-28 pb-20 px-6 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-600/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-20 max-w-3xl">
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-            Project <span className="text-cyan-400">Archives.</span>
-          </h1>
+    <section id="projects" className="min-h-screen pt-28 pb-20 px-6 bg-[#f8fafc] border-t border-slate-200 relative">
+      
+      <div className="max-w-6xl mx-auto">
+        
+        {/* --- HEADER --- */}
+        <motion.div 
+          initial={{ opacity: 0, y: -15 }} 
+          whileInView={{ opacity: 1, y: 0 }} 
+          viewport={{ once: true }} 
+          className="mb-16 max-w-3xl"
+        >
+          <span className="text-[#0284c7] text-[10px] font-mono font-bold uppercase tracking-widest mb-2 block">
+            System Architecture
+          </span>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#1e3a8a] tracking-tight mb-4">
+            Project Archives.
+          </h2>
+          <p className="text-slate-500 text-base font-normal max-w-xl leading-relaxed">
+            A breakdown of hardware prototypes, local machine-learning deployments, and core algorithmic platforms.
+          </p>
         </motion.div>
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* --- CLEAN SAAS GRID --- */}
+        <motion.div 
+          variants={containerVariants} 
+          initial="hidden" 
+          whileInView="visible" 
+          viewport={{ once: true }} 
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
           {projectsData.map((project) => (
-            <motion.div key={project.id} variants={cardVariants}>
-              <TiltCard className="h-full group flex flex-col bg-[#0f111a] border border-white/5 rounded-2xl overflow-hidden hover:border-cyan-500/30 transition-all duration-300 relative">
+            <motion.div key={project.id} variants={cardVariants} className="h-full">
+              
+              {/* THE FLAT, CLEAN CARD */}
+              <div className="group flex flex-col h-full bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-slate-300 transition-all duration-300 relative">
                 
-                {/* --- CLICKABLE LINK TO DETAILS --- */}
+                {/* Invisible Clickable Link overlaying the whole card */}
                 <Link to={`/project/${project.id}`} className="absolute inset-0 z-20" />
 
-                {/* --- IMAGE SECTION --- */}
-                <div className="h-48 overflow-hidden relative border-b border-white/5 bg-gray-900">
+                {/* Image Container */}
+                <div className="h-48 overflow-hidden relative border-b border-slate-100 bg-slate-50">
                   <img 
                     src={process.env.PUBLIC_URL + project.image} 
                     alt={project.title} 
-                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
-                    onError={(e) => e.target.style.display = 'none'} // Hides if image fails
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => e.target.style.display = 'none'} 
                   />
                 </div>
 
-                {/* Content Section */}
-                <div className="p-8 flex flex-col flex-grow relative z-10">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className="px-3 py-1 text-[10px] font-bold uppercase text-cyan-300 bg-cyan-900/10 rounded-full">
+                {/* Content Container */}
+                <div className="p-6 flex flex-col flex-grow relative z-10">
+                  
+                  {/* Category & GitHub Row */}
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#0284c7] font-mono bg-sky-50 border border-sky-100 px-2.5 py-1 rounded">
                       {project.category}
                     </span>
-                    {/* Github Link (High Z-Index to be clickable) */}
-                    <a href={project.github} target="_blank" rel="noreferrer" className="text-slate-600 hover:text-white transition-colors z-30">
-                      <FaGithub size={22} />
+                    
+                    {/* GitHub Icon (High Z-Index so it can be clicked separately from the main card) */}
+                    <a href={project.github} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-[#1e3a8a] transition-colors z-30 p-1">
+                      <FaGithub size={18} />
                     </a>
                   </div>
 
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-cyan-400 transition-colors">
+                  {/* Title & Description */}
+                  <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-[#1e3a8a] transition-colors tracking-tight">
                     {project.title}
                   </h3>
-                  <p className="text-slate-400 text-sm mb-6 flex-grow">{project.shortDesc}</p>
+                  <p className="text-slate-500 text-sm mb-6 flex-grow leading-relaxed font-normal">
+                    {project.shortDesc}
+                  </p>
 
-                  <div className="pt-6 mt-auto border-t border-white/5 flex items-center text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
+                  {/* Footer Action */}
+                  <div className="pt-4 mt-auto border-t border-slate-100 flex items-center text-xs font-bold font-mono text-[#1e3a8a] group-hover:text-[#0284c7] transition-colors uppercase tracking-widest">
                     <span>Read Case Study</span>
-                    <FaArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform" />
+                    <FaArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform text-[10px]" />
                   </div>
+                  
                 </div>
-              </TiltCard>
+              </div>
+
             </motion.div>
           ))}
         </motion.div>
+
       </div>
     </section>
   );
