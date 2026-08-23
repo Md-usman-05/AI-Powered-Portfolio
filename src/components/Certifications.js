@@ -43,7 +43,14 @@ export default function Certifications() {
       title: "Professional Internships",
       icon: <FaBriefcase />,
       items: [
-      
+         {
+          title: "AI & ML with Python Internship",
+          issuer: "Interns Elite",
+          year: "Jun 2026 - Aug 2026",
+          desc: "Successfully completed an intensive program focusing on Artificial Intelligence and Machine Learning using Python. Demonstrated active engagement in practical, hands-on learning and the implementation of ML algorithms.",
+          image: "/images/internselite-aiml.png", 
+          link: "/documents/internselite-aiml.pdf" // Suggestion: rename your long PDF file to this for cleaner code!
+        },
         {
           title: "Data Analytics Internship",
           issuer: "Vaultsphere AI Technologies",
