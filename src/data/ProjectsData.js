@@ -5,7 +5,7 @@ export const projectsData = [
     category: "Full-Stack AI & NLP",
     shortDesc: "An AI-powered learning platform that transforms academic notes into concise, exam-focused summaries using Qwen3.5-9B.",
     image: "/images/notemind.jpg", 
-    github: "#", 
+    github: "https://github.com/Md-usman-05/ai-powered-notes-summarizer", 
     overview: "I built NoteMind AI to solve the problem of overwhelming academic material. It is a full-stack platform that takes lengthy documents and chunks them through a source-grounded Hugging Face API pipeline. By utilizing Qwen3.5-9B, I engineered the prompts to strictly prevent AI hallucinations—ensuring that critical formulas, technical definitions, and relationships are perfectly preserved for exam revision.",
     architecture: [
       "Engineered a React frontend and Django REST backend secured with JWT authentication and OTP password recovery.",
@@ -13,6 +13,51 @@ export const projectsData = [
       "Designed source-grounded prompts forcing the LLM to retain technical terminology without injecting outside knowledge."
     ],
     techStack: ["React", "Django", "Qwen3.5-9B", "Hugging Face API", "SQLite", "Render"]
+  },
+  {
+    id: "ai-resume-ats",
+    title: "AI Resume ATS",
+    category: "AI & NLP",
+    shortDesc: "An AI-powered Applicant Tracking System designed to evaluate and score resumes against target job descriptions.",
+    image: "/images/resume-ats.jpg", 
+    github: "https://github.com/Md-usman-05/AI-Resume-ATS", 
+    overview: "To optimize the job application process, I developed an AI-driven Applicant Tracking System (ATS). The application utilizes Natural Language Processing to extract key competencies from uploaded resumes and cross-references them with target job descriptions, providing an actionable compatibility score and keyword suggestions.",
+    architecture: [
+      "Implemented NLP techniques to parse and extract structured data from unstructured PDF resumes.",
+      "Developed a scoring algorithm to calculate keyword overlap and semantic relevance against job descriptions.",
+      "Built a user-friendly interface for instant feedback and resume optimization analysis."
+    ],
+    techStack: ["Python", "NLP", "Machine Learning", "Data Extraction"]
+  },
+  {
+    id: "predictive-energy",
+    title: "Electricity Bill Forecaster",
+    category: "Machine Learning",
+    shortDesc: "An ML-powered web application for predicting future electricity bills from household energy consumption patterns.",
+    image: "/images/electricity-forecaster.jpg",
+    github: "https://github.com/Md-usman-05/Electricity-Bill-Forecaster",
+    overview: "To help households anticipate energy costs, I developed a machine-learning forecasting application. The system ingests historical consumption telemetry, applies rigorous data preprocessing, and utilizes multiple regression-based approaches to output highly accurate cost predictions through a clean web interface.",
+    architecture: [
+      "Trained and evaluated multiple regression models using Scikit-learn to optimize prediction accuracy.",
+      "Engineered automated data preprocessing pipelines to clean and structure raw household consumption telemetry.",
+      "Deployed a lightweight Flask web interface for seamless user input and dynamic data visualization."
+    ],
+    techStack: ["Python", "Scikit-learn", "Flask", "Machine Learning", "HTML/CSS"]
+  },
+  {
+    id: "smart-railway-gate",
+    title: "Smart Railway Gate",
+    category: "Embedded Systems",
+    shortDesc: "An automated railway safety system utilizing Arduino logic and ultrasonic sensors.",
+    image: "/images/railway-gate.jpg",
+    github: "https://github.com/Md-usman-05/Smart-Railway-Gate",
+    overview: "I engineered this hardware prototype to drastically enhance physical infrastructure safety by eliminating human error. The system accurately detects approaching trains using ultrasonic sensors and actuates servo motors to control the physical railway gates in real-time.",
+    architecture: [
+      "Programmed an Arduino Uno R3 in C++ to process continuous, real-time sensor telemetry.",
+      "Integrated ultrasonic sensors for accurate distance, speed, and physical presence detection.",
+      "Controlled dual servo motors for precise, automated mechanical gate actuation based on threshold logic."
+    ],
+    techStack: ["Arduino Uno R3", "C++", "Ultrasonic Sensors", "Servo Motors"]
   },
   {
     id: "swan-gateway",
@@ -28,36 +73,6 @@ export const projectsData = [
       "Designed the embedded hardware architecture to ensure reliable message transmission between node gateways."
     ],
     techStack: ["Python", "C/C++", "LoRa SX1262", "Embedded Systems", "Hardware Integration"]
-  },
-  // {
-  //   id: "swan-bot",
-  //   title: "SWAN Bot",
-  //   category: "Edge Computing & AI",
-  //   shortDesc: "An offline-first desktop conversational AI built with Electron and highly quantized Small Language Models.",
-  //   image: "/images/swan-bot.jpg",
-  //   github: "#",
-  //   overview: "Data privacy shouldn't require compromising on intelligence. I developed SWAN Bot to run entirely at the edge without internet access. Utilizing an Electron-based frontend and quantized Small Language Models (SLMs) like TinyLlama and Phi-3, this application delivers a highly responsive conversational experience using local computing resources.",
-  //   architecture: [
-  //     "Built a cross-platform desktop frontend utilizing HTML, CSS, JavaScript, and Electron.",
-  //     "Integrated quantized SLMs (TinyLlama, Phi-3) directly into the local environment for low-resource inference.",
-  //     "Optimized prompt processing and context windows to ensure rapid, real-time query resolution on consumer hardware."
-  //   ],
-  //   techStack: ["Electron", "JavaScript", "Phi-3", "TinyLlama", "Local Edge AI"]
-  // },
-  {
-    id: "predictive-energy",
-    title: "Electricity Bill Forecaster",
-    category: "Machine Learning",
-    shortDesc: "An ML-powered web application for predicting future electricity bills from household energy consumption patterns.",
-    image: "/images/electricity-forecaster.jpg",
-    github: "#",
-    overview: "To help households anticipate energy costs, I developed a machine-learning forecasting application. The system ingests historical consumption telemetry, applies rigorous data preprocessing, and utilizes multiple regression-based approaches to output highly accurate cost predictions through a clean web interface.",
-    architecture: [
-      "Trained and evaluated multiple regression models using Scikit-learn to optimize prediction accuracy.",
-      "Engineered automated data preprocessing pipelines to clean and structure raw household consumption telemetry.",
-      "Deployed a lightweight Flask web interface for seamless user input and dynamic data visualization."
-    ],
-    techStack: ["Python", "Scikit-learn", "Flask", "Machine Learning", "HTML/CSS"]
   },
   {
     id: "mern-footwear",
@@ -75,33 +90,18 @@ export const projectsData = [
     techStack: ["React.js", "Node.js", "Express.js", "MongoDB", "JavaScript"]
   },
   {
-    id: "smart-railway-gate",
-    title: "Smart Railway Gate",
-    category: "Embedded Systems",
-    shortDesc: "An automated railway safety system utilizing Arduino logic and ultrasonic sensors.",
-    image: "/images/railway-gate.jpg",
-    github: "#",
-    overview: "I engineered this hardware prototype to drastically enhance physical infrastructure safety by eliminating human error. The system accurately detects approaching trains using ultrasonic sensors and actuates servo motors to control the physical railway gates in real-time.",
-    architecture: [
-      "Programmed an Arduino Uno R3 in C++ to process continuous, real-time sensor telemetry.",
-      "Integrated ultrasonic sensors for accurate distance, speed, and physical presence detection.",
-      "Controlled dual servo motors for precise, automated mechanical gate actuation based on threshold logic."
-    ],
-    techStack: ["Arduino Uno R3", "C++", "Ultrasonic Sensors", "Servo Motors"]
-  },
-  {
     id: "bugblitz",
     title: "BugBlitz Platform",
     category: "Software Engineering (In Development)",
-    shortDesc: "A comprehensive Java-based coding challenge platform designed for algorithmic evaluation.",
+    shortDesc: "A MERN stack coding challenge platform designed for algorithmic evaluation and logic building.",
     image: "/images/bugblitz.jpg",
     github: "#",
-    overview: "Currently in active development, BugBlitz is a structured programming platform I am building to house 40 distinct, progressively difficult Java challenges. It is designed to act as a comprehensive evaluation tool for logic building, ranging from basic mathematical validations to complex binary search and data structure implementations.",
+    overview: "Currently in active development, BugBlitz is a modern, structured programming platform I am building to house progressively difficult coding challenges. Engineered using the MERN stack, it is designed to act as a comprehensive evaluation tool offering a seamless interface for users to solve problems and a scalable backend to manage submissions.",
     architecture: [
-      "Developing core algorithmic solutions utilizing foundational Java data structures.",
-      "Architecting a scalable backend to evaluate user-submitted code for time and space complexity.",
-      "Designing a progressive technical learning curve categorized strictly by algorithmic difficulty."
+      "Developing a responsive frontend using React.js to provide an interactive and intuitive coding environment.",
+      "Architecting a scalable Express/Node.js backend to handle API requests and manage execution logic securely.",
+      "Integrating MongoDB to efficiently store user profiles, challenge datasets, and historical code submissions."
     ],
-    techStack: ["Java", "Data Structures", "Algorithms", "System Architecture"]
+    techStack: ["React.js", "Node.js", "Express.js", "MongoDB", "JavaScript"]
   }
 ];
