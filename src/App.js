@@ -68,11 +68,13 @@ export default function App() {
 
             <div className="relative z-10 flex flex-col">
               <Navbar />
-              
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/project/:id" element={<ProjectDetails />} />
-              </Routes>
+          <Routes>
+  {/* Your existing home route */}
+  <Route path="/" element={<Home />} /> 
+  
+  {/* Add this exact line right here! */}
+  <Route path="/project/:id" element={<ProjectDetails />} />
+</Routes>
 
               <Footer />
               <Chatbot />

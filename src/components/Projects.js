@@ -89,10 +89,9 @@ export default function Projects() {
                   </p>
 
                   {/* Footer Action */}
-                  <div className="pt-4 mt-auto border-t border-slate-100 flex items-center text-xs font-bold font-mono text-[#1e3a8a] group-hover:text-[#0284c7] transition-colors uppercase tracking-widest">
-                    <span>Read Case Study</span>
-                    <FaArrowRight className="ml-2 transform group-hover:translate-x-1 transition-transform text-[10px]" />
-                  </div>
+                 <a href={project.github} target="_blank" rel="noreferrer">
+  View Source Code
+</a>
                   
                 </div>
               </div>
