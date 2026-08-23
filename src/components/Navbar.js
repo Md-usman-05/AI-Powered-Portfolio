@@ -84,14 +84,15 @@ const navItems = [
         </div>
 
         {/* RESUME BUTTON */}
-        <a
-          href="https://Md-usman-05.github.io/AI-Powered-Portfolio/resume.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden md:block px-6 py-2.5 border border-slate-300 rounded-full text-xs font-bold tracking-wider text-slate-700 hover:bg-slate-50 transition-all duration-300 shadow-sm"
-        >
-          DOWNLOAD RESUME
-        </a>
+       {/* RESUME BUTTON */}
+<a
+  href={process.env.PUBLIC_URL + "/documents/Md_Usman_Resume.pdf"}
+  target="_blank"
+  rel="noreferrer"
+  className="hidden md:inline-flex items-center justify-center px-6 py-2.5 border border-slate-300 rounded-full text-sm font-bold font-mono tracking-wide text-slate-700 hover:text-[#1e3a8a] hover:border-[#1e3a8a] transition-all"
+>
+  VIEW RESUME
+</a>
 
       </div>
     </nav>
